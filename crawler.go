@@ -18,7 +18,7 @@ type pageArray []page
 var Base pageArray
 var PagesToBeScanned pageArray
 var depth = 6
-var startURL = "https://ya.ru"
+var startURL = "https://clck.ru/9w"
 
 type page struct {
 	URL        string
@@ -80,12 +80,9 @@ func crawlRecursive() {
 				}
 
 			} else if fResult.status() == NoData {
-				fmt.Println("NODATA!!!!!!!!!!!!!!")
+				fmt.Println("4xx or 5xx status code recieved on", currentPage.URL)
 				//	TODO What to do with this code?
-			} else {
-				//	TODO Something went wrong
 			}
-
 		}
 		crawlRecursive()
 	}
@@ -116,6 +113,7 @@ func fetch(URL string) fetchResult {
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		}}
+	//TODO Add request timeout
 
 	resp, err := client.Get(URL)
 	fResult.statusCode = resp.StatusCode
@@ -140,6 +138,7 @@ func extractURLs(body []byte) []string {
 
 	var URLsFound []string
 	re := regexp.MustCompile(`href="http.+?"`)
+	// TODO Find a better way to parse URLs, handle local links
 	strings := re.FindAllString(string(body), -1)
 	for _, v := range strings {
 		currentURL := v[len("href='"):(len(v) - 1)]
