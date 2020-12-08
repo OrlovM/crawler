@@ -7,11 +7,10 @@ import (
 	"regexp"
 )
 
-
 const (
-	OK = iota
+	OK       = iota
 	Redirect = iota
-	NoData = iota
+	NoData   = iota
 )
 
 type pageArray []page
@@ -19,13 +18,13 @@ type pageArray []page
 var Base pageArray
 var PagesToBeScanned pageArray
 var depth = 6
-var startURL = "https://yandex.ru/ksdfjsdf"
+var startURL = "https://ya.ru"
 
 type page struct {
-	URL string
-	depth int
-	from string // URL where this page was found
-	statusCode int //0 if page was not requested
+	URL        string
+	depth      int
+	from       string // URL where this page was found
+	statusCode int    //0 if page was not requested
 }
 
 type fetchResult struct {
@@ -36,8 +35,10 @@ type fetchResult struct {
 
 func (f fetchResult) status() int {
 	switch f.statusCode / 100 {
-	case 2 : return  OK
-	case 3 : return  Redirect
+	case 2:
+		return OK
+	case 3:
+		return Redirect
 	}
 	return NoData
 
@@ -45,7 +46,7 @@ func (f fetchResult) status() int {
 
 func main() {
 
-	PagesToBeScanned = pageArray{page{startURL,0, "Start URL", 0}}
+	PagesToBeScanned = pageArray{page{startURL, 0, "Start URL", 0}}
 	crawlRecursive()
 	fmt.Println("Unique URLs found", len(Base))
 }
@@ -74,7 +75,9 @@ func crawlRecursive() {
 					}
 				}
 			} else if fResult.status() == Redirect {
-				//	TODO Handle redirect
+				if currentPage.depth < depth {
+					PagesToBeScanned = append(PagesToBeScanned, page{fResult.location, currentPage.depth, "redirected from" + currentPage.URL, 0})
+				}
 
 			} else if fResult.status() == NoData {
 				fmt.Println("NODATA!!!!!!!!!!!!!!")
@@ -102,28 +105,31 @@ func printInBase(currentPage page) {
 }
 
 func printFound(currentPage page) {
-	fmt.Println("Found new URL", currentPage.URL,"on page", currentPage.from, "depth", currentPage.depth, "status code", currentPage.statusCode)
+	fmt.Println("Found new URL", currentPage.URL, "on page", currentPage.from, "depth", currentPage.depth, "status code", currentPage.statusCode)
 }
 
 func fetch(URL string) fetchResult {
 
-
 	var fResult = fetchResult{0, "", nil}
 
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}}
 
-	resp, err := http.Get(URL)
+	resp, err := client.Get(URL)
+	fResult.statusCode = resp.StatusCode
+	fResult.location = resp.Header.Get("Location")
 	if err != nil {
-		fmt.Println(err, "http.Get не получилось")
+		fmt.Println(err, "http.Get failed")
 	} else {
 
 		defer resp.Body.Close()
 
 		fResult.body, err = ioutil.ReadAll(resp.Body)
 
-		fResult.statusCode = resp.StatusCode
-
 		if err != nil {
-			fmt.Println(err, "ioutil.ReadAll не получилось", resp)
+			fmt.Println(err, "ioutil.ReadAll failed", resp)
 		}
 	}
 	return fResult
@@ -136,11 +142,8 @@ func extractURLs(body []byte) []string {
 	re := regexp.MustCompile(`href="http.+?"`)
 	strings := re.FindAllString(string(body), -1)
 	for _, v := range strings {
-		currentURL := v[len("href='"):(len(v)-1)]
+		currentURL := v[len("href='"):(len(v) - 1)]
 		URLsFound = append(URLsFound, currentURL, currentURL)
 	}
 	return URLsFound
 }
-
-
-
