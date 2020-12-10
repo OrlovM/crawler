@@ -20,11 +20,18 @@ var PagesToBeScanned pageArray
 var depth = 6
 var startURL = "https://clck.ru/9w"
 
+var client = &http.Client{
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}}
+
+//TODO Add request timeout
+
 type page struct {
 	URL        string
 	depth      int
 	from       string // URL where this page was found
-	statusCode int    //0 if page was not requested
+	statusCode int    //0 if page was not requested or request failed
 }
 
 type fetchResult struct {
@@ -33,8 +40,8 @@ type fetchResult struct {
 	body       []byte
 }
 
-func (f fetchResult) status() int {
-	switch f.statusCode / 100 {
+func (f *fetchResult) status() int {
+	switch (*f).statusCode / 100 {
 	case 2:
 		return OK
 	case 3:
@@ -49,6 +56,7 @@ func main() {
 	PagesToBeScanned = pageArray{page{startURL, 0, "Start URL", 0}}
 	crawlRecursive()
 	fmt.Println("Unique URLs found", len(Base))
+
 }
 
 func (s *pageArray) trimFirst() {
@@ -108,24 +116,14 @@ func printFound(currentPage page) {
 func fetch(URL string) fetchResult {
 
 	var fResult = fetchResult{0, "", nil}
-
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		}}
-	//TODO Add request timeout
-
 	resp, err := client.Get(URL)
-	fResult.statusCode = resp.StatusCode
-	fResult.location = resp.Header.Get("Location")
 	if err != nil {
 		fmt.Println(err, "http.Get failed")
 	} else {
-
 		defer resp.Body.Close()
-
+		fResult.statusCode = resp.StatusCode
+		fResult.location = resp.Header.Get("Location")
 		fResult.body, err = ioutil.ReadAll(resp.Body)
-
 		if err != nil {
 			fmt.Println(err, "ioutil.ReadAll failed", resp)
 		}
