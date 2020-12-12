@@ -1,31 +1,13 @@
-package main
+package crawler
 
 import (
+
+	//"fmt"
+
+	"awesomeProject/internal/fetcher"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"regexp"
 )
-
-const (
-	OK       = iota
-	Redirect = iota
-	NoData   = iota
-)
-
-type pageArray []page
-
-var Base pageArray
-var PagesToBeScanned pageArray
-var depth = 6
-var startURL = "https://clck.ru/9w"
-
-var client = &http.Client{
-	CheckRedirect: func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}}
-
-//TODO Add request timeout
 
 type page struct {
 	URL        string
@@ -34,66 +16,61 @@ type page struct {
 	statusCode int    //0 if page was not requested or request failed
 }
 
-type fetchResult struct {
-	statusCode int
-	location   string
-	body       []byte
+type pageArray []page
+
+type crawler struct {
+	fetcher fetcher.Fetcher
 }
 
-func (f *fetchResult) status() int {
-	switch (*f).statusCode / 100 {
-	case 2:
-		return OK
-	case 3:
-		return Redirect
-	}
-	return NoData
+var Base pageArray
+var PagesToBeScanned pageArray
+var depth int
 
+func NewCrawler(fetcher fetcher.Fetcher) *crawler {
+	return &crawler{fetcher}
 }
 
-func main() {
-
+func (c *crawler) Crawl(startURL string, maxDepth int) {
 	PagesToBeScanned = pageArray{page{startURL, 0, "Start URL", 0}}
-	crawlRecursive()
+	depth = maxDepth
+	c.crawlRecursive()
 	fmt.Println("Unique URLs found", len(Base))
-
 }
 
-func (s *pageArray) trimFirst() {
-	*s = (*s)[1:]
-}
-
-func crawlRecursive() {
-
+func (c *crawler) crawlRecursive() {
 	if len(PagesToBeScanned) != 0 {
 		currentPage := PagesToBeScanned[0]
 		PagesToBeScanned.trimFirst()
 		if Base.contains(currentPage) {
 			printInBase(currentPage)
 		} else {
-			fResult := fetch(currentPage.URL)
-			currentPage.statusCode = fResult.statusCode
+			fResult := c.fetcher.Fetch(currentPage.URL)
+			currentPage.statusCode = fResult.StatusCode
 			Base = append(Base, currentPage)
 			printFound(currentPage)
-			if fResult.status() == OK {
+			if fResult.Status() == fetcher.OK {
 				if currentPage.depth < depth {
-					URLs := extractURLs(fResult.body)
+					URLs := extractURLs(fResult.Body)
 					for _, u := range URLs {
 						PagesToBeScanned = append(PagesToBeScanned, page{u, currentPage.depth + 1, currentPage.URL, 0})
 					}
 				}
-			} else if fResult.status() == Redirect {
+			} else if fResult.Status() == fetcher.Redirect {
 				if currentPage.depth < depth {
-					PagesToBeScanned = append(PagesToBeScanned, page{fResult.location, currentPage.depth, "redirected from" + currentPage.URL, 0})
+					PagesToBeScanned = append(PagesToBeScanned, page{fResult.Location, currentPage.depth, "redirected from" + currentPage.URL, 0})
 				}
 
-			} else if fResult.status() == NoData {
+			} else if fResult.Status() == fetcher.NoData {
 				fmt.Println("4xx or 5xx status code recieved on", currentPage.URL)
 				//	TODO What to do with this code?
 			}
 		}
-		crawlRecursive()
+		c.crawlRecursive()
 	}
+}
+
+func (s *pageArray) trimFirst() {
+	*s = (*s)[1:]
 }
 
 func (s pageArray) contains(p page) bool {
@@ -113,27 +90,7 @@ func printFound(currentPage page) {
 	fmt.Println("Found new URL", currentPage.URL, "on page", currentPage.from, "depth", currentPage.depth, "status code", currentPage.statusCode)
 }
 
-func fetch(URL string) fetchResult {
-
-	var fResult = fetchResult{0, "", nil}
-	resp, err := client.Get(URL)
-	if err != nil {
-		fmt.Println(err, "http.Get failed")
-	} else {
-		defer resp.Body.Close()
-		fResult.statusCode = resp.StatusCode
-		fResult.location = resp.Header.Get("Location")
-		fResult.body, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Println(err, "ioutil.ReadAll failed", resp)
-		}
-	}
-	return fResult
-
-}
-
 func extractURLs(body []byte) []string {
-
 	var URLsFound []string
 	re := regexp.MustCompile(`href="http.+?"`)
 	// TODO Find a better way to parse URLs, handle local links
