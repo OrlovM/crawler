@@ -48,21 +48,18 @@ func (c *crawler) crawlRecursive() {
 			currentPage.statusCode = fResult.StatusCode
 			Base = append(Base, currentPage)
 			printFound(currentPage)
-			if fResult.Status() == fetcher.OK {
-				if currentPage.depth < depth {
+			if currentPage.depth < depth {
+				if fResult.Status() == fetcher.OK {
 					URLs := extractURLs(fResult.Body)
 					for _, u := range URLs {
 						PagesToBeScanned = append(PagesToBeScanned, page{u, currentPage.depth + 1, currentPage.URL, 0})
 					}
-				}
-			} else if fResult.Status() == fetcher.Redirect {
-				if currentPage.depth < depth {
+				} else if fResult.Status() == fetcher.Redirect {
 					PagesToBeScanned = append(PagesToBeScanned, page{fResult.Location, currentPage.depth, "redirected from" + currentPage.URL, 0})
+				} else if fResult.Status() == fetcher.NoData {
+					fmt.Println("4xx or 5xx status code recieved on", currentPage.URL)
+					//	TODO What to do with this code?
 				}
-
-			} else if fResult.Status() == fetcher.NoData {
-				fmt.Println("4xx or 5xx status code recieved on", currentPage.URL)
-				//	TODO What to do with this code?
 			}
 		}
 		c.crawlRecursive()

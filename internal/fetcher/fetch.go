@@ -43,7 +43,6 @@ func (f *FetchResult) Status() int {
 		return Redirect
 	}
 	return NoData
-
 }
 
 func (fetcher fetcher) Fetch(URL string) FetchResult {
