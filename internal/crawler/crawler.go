@@ -22,13 +22,12 @@ type crawler struct {
 
 var Base pageArray
 var depth int
-var maxGoroutines = 20
 
 func NewCrawler(fetcher fetcher.Fetcher) *crawler {
 	return &crawler{fetcher}
 }
 
-func (c *crawler) Crawl(startURL string, maxDepth int) {
+func (c *crawler) Crawl(startURL string, maxDepth int, maxGoroutines int) {
 	depth = maxDepth
 	sem := make(chan struct{}, maxGoroutines)
 	pagesFound := make(chan *page, 10000)
