@@ -1,11 +1,11 @@
 package main
 
 import (
-	"awesomeProject/internal/crawler"
-	"awesomeProject/internal/fetcher"
+	"crawler/internal/crawler"
+	"crawler/internal/fetcher"
 )
 
-var depth = 6
+var depth = 3
 var startURL = "https://clck.ru/9w"
 
 func main() {
