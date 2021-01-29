@@ -1,38 +1,38 @@
 package crawler
 
 import (
-	"crawler/internal/fetcher"
+	"crawler/internal/fetch"
 	"fmt"
 	"regexp"
 	"time"
 )
 
-type page struct {
+type Page struct {
 	URL        string
-	depth      int
-	from       string // URL where this page was found
-	statusCode int    //0 if page was not requested or request failed
+	Depth      int
+	From       string // URL where this Page was found
+	StatusCode int    //0 if Page was not requested or request failed
 }
 
-type pageArray []page
+type PageArray []Page
 
 type crawler struct {
-	fetcher fetcher.Fetcher
+	fetcher fetch.Fetcher
 }
 
-var Base pageArray
+var Base PageArray
 var depth int
 
-func NewCrawler(fetcher fetcher.Fetcher) *crawler {
+func NewCrawler(fetcher fetch.Fetcher) *crawler {
 	return &crawler{fetcher}
 }
 
 func (c *crawler) Crawl(startURL string, maxDepth int, maxGoroutines int) {
 	depth = maxDepth
 	sem := make(chan struct{}, maxGoroutines)
-	pagesFound := make(chan *page, 10000)
-	pagesToCrawl := make(chan *page, 10000)
-	pagesFound <- &page{startURL, 0, "Start URL", 0}
+	pagesFound := make(chan *Page, 10000)
+	pagesToCrawl := make(chan *Page, 10000)
+	pagesFound <- &Page{startURL, 0, "Start URL", 0}
 	go showInfo(pagesFound, pagesToCrawl)
 	go operate(pagesFound, pagesToCrawl)
 	for p := range pagesToCrawl {
@@ -43,13 +43,13 @@ func (c *crawler) Crawl(startURL string, maxDepth int, maxGoroutines int) {
 	fmt.Println("Unique URLs found", len(Base))
 }
 
-func showInfo(pagesFound chan *page, pagesToCrawl chan *page) {
+func showInfo(pagesFound chan *Page, pagesToCrawl chan *Page) {
 	time.Sleep(time.Second * 1)
 	fmt.Println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!pages Found", len(pagesFound), "pages to crawl", len(pagesToCrawl), "base", len(Base))
 	showInfo(pagesFound, pagesToCrawl)
 }
 
-func operate(pagesFound chan *page, pagesToCrawl chan *page) {
+func operate(pagesFound chan *Page, pagesToCrawl chan *Page) {
 
 	for p := range pagesFound {
 		if Base.contains(p) {
@@ -57,36 +57,36 @@ func operate(pagesFound chan *page, pagesToCrawl chan *page) {
 		} else {
 			printFound(*p)
 			Base = append(Base, *p)
-			if p.depth < depth {
+			if p.Depth < depth {
 				pagesToCrawl <- p
 			}
 		}
 	}
 }
 
-func (c *crawler) crawl(currentPage *page, pagesFound chan *page, sem chan struct{}) {
+func (c *crawler) crawl(currentPage *Page, pagesFound chan *Page, sem chan struct{}) {
 	defer func() { <-sem }()
 	fResult := c.fetcher.Fetch(currentPage.URL)
-	currentPage.statusCode = fResult.StatusCode
-	if fResult.Status() == fetcher.OK {
-		URLs := extractURLs(fResult.Body)
+	currentPage.StatusCode = fResult.StatusCode
+	if fResult.Status() == fetch.OK {
+		URLs := ExtractURLs(fResult.Body)
 		for _, u := range URLs {
-			pagesFound <- &page{u, currentPage.depth + 1, currentPage.URL, 0}
+			pagesFound <- &Page{u, currentPage.Depth + 1, currentPage.URL, 0}
 		}
-	} else if fResult.Status() == fetcher.Redirect {
-		pagesFound <- &page{fResult.Location, currentPage.depth, "redirected from" + currentPage.URL, 0}
-	} else if fResult.Status() == fetcher.NoData {
+	} else if fResult.Status() == fetch.Redirect {
+		pagesFound <- &Page{fResult.Location, currentPage.Depth, "redirected From" + currentPage.URL, 0}
+	} else if fResult.Status() == fetch.NoData {
 		fmt.Println("4xx or 5xx status code recieved on", currentPage.URL)
 		//	TODO What to do with this code?
 	}
 
 }
 
-func (s *pageArray) trimFirst() {
+func (s *PageArray) TrimFirst() {
 	*s = (*s)[1:]
 }
 
-func (s pageArray) contains(p *page) bool {
+func (s PageArray) contains(p *Page) bool {
 	for _, n := range s {
 		if p.URL == n.URL {
 			return true
@@ -95,15 +95,15 @@ func (s pageArray) contains(p *page) bool {
 	return false
 }
 
-func printInBase(currentPage page) {
-	fmt.Println("URL ", currentPage.URL, "found on page", currentPage.from, " is already in base")
+func printInBase(currentPage Page) {
+	fmt.Println("URL ", currentPage.URL, "found on Page", currentPage.From, " is already in base")
 }
 
-func printFound(currentPage page) {
-	fmt.Println("Found new URL", currentPage.URL, "on page", currentPage.from, "depth", currentPage.depth, "status code", currentPage.statusCode)
+func printFound(currentPage Page) {
+	fmt.Println("Found new URL", currentPage.URL, "on Page", currentPage.From, "Depth", currentPage.Depth, "status code", currentPage.StatusCode)
 }
 
-func extractURLs(body []byte) []string {
+func ExtractURLs(body []byte) []string {
 	var URLsFound []string
 	re := regexp.MustCompile(`href="http.+?"`)
 	// TODO Find a better way to parse URLs, handle local links

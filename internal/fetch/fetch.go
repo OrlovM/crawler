@@ -1,4 +1,4 @@
-package fetcher
+package fetch
 
 import (
 	"fmt"
@@ -20,6 +20,8 @@ type FetchResult struct {
 	StatusCode int
 	Location   string
 	Body       []byte
+	URL        string
+	Depth      int
 }
 
 type Fetcher interface {
@@ -46,7 +48,7 @@ func (f *FetchResult) Status() int {
 }
 
 func (fetcher fetcher) Fetch(URL string) FetchResult {
-	var fResult = FetchResult{0, "", nil}
+	var fResult = FetchResult{0, "", nil, URL, 0}
 	resp, err := fetcher.client.Get(URL)
 	if err != nil {
 		fmt.Println(err, "http.Get failed")
