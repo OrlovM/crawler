@@ -4,8 +4,8 @@ import (
 	"crawler/internal/crawler"
 	"flag"
 	"fmt"
+	"github.com/OrlovM/go-workerpool"
 	"time"
-	"workerpool"
 )
 
 var base crawler.PagesSlice
@@ -44,16 +44,13 @@ func main() {
 		if exit == true {break}
 		select {
 		case t := <- fOut:
-			fmt.Println("got from fOut")
 			tasksInWork--
 			if fT, ok := t.(*crawler.FetchTask); ok == true {
-				fmt.Println("asserted as fTask", fT.Page.URL)
 				addToBase <- *fT.Page
 				if fT.Page.Depth < *depth {
 				pTask := crawler.NewParseTask(fT.FetchResult)
 				select {
 				case pIn <- pTask:
-					fmt.Println("sent to parse")
 					tasksInWork++
 				default:
 					buffer = append(buffer, pTask)
@@ -61,25 +58,22 @@ func main() {
 				}
 			} //TODO write else branch
 		case t := <- pOut:
-			fmt.Println("got from pOut")
 			tasksInWork--
 			if pT, ok := t.(*crawler.ParseTask); ok == true {
-				fmt.Println("asserted as ParseTask. page")
 				for _, p := range *pT.FoundPages {
 					page := p
 					fmt.Println(p.URL)
 					if !cache.contains(page) {
+						printFound(page)
 						cache = append(cache, page.URL)
 						fTask := crawler.NewFetchTask(fetcher, &page)
 						select {
 						case fIn <- fTask:
 							tasksInWork++
-							fmt.Println("sent to fetch")
 						default:
 							buffer = append(buffer, fTask)
-							fmt.Println("added to buffer")
 						}
-					}
+					} else {printInBase(page)}
 				}
 			}
 		default:
@@ -123,10 +117,10 @@ func (s URLSlice) contains(p crawler.Page) bool {
 	return false
 }
 
-//func printInBase(currentPage Page) {
-//	fmt.Println("URL ", currentPage.URL, "found on Page", currentPage.From, " is already in base")
-//}
-//
-//func printFound(currentPage Page) {
-//	fmt.Println("Found new URL", currentPage.URL, "on Page", currentPage.From, "Depth", currentPage.Depth, "status code", currentPage.StatusCode)
-//}
+func printInBase(currentPage crawler.Page) {
+	fmt.Println("URL ", currentPage.URL, "found on Page", currentPage.From, " is already in base")
+}
+
+func printFound(currentPage crawler.Page) {
+	fmt.Println("Found new URL", currentPage.URL, "on Page", currentPage.From, "Depth", currentPage.Depth, "status code", currentPage.StatusCode)
+}

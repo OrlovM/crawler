@@ -47,7 +47,7 @@ func (f *FetchResult) Status() int {
 	return NoData
 }
 
-func (fetcher fetcher) Fetch(URL string) *FetchResult {
+func (fetcher fetcher) Fetch(URL string) (*FetchResult, error) {
 	var fResult = FetchResult{0, "", nil, URL, 0}
 	resp, err := fetcher.client.Get(URL)
 	if err != nil {
@@ -61,5 +61,5 @@ func (fetcher fetcher) Fetch(URL string) *FetchResult {
 			fmt.Println(err, "ioutil.ReadAll failed", resp)
 		}
 	}
-	return &fResult
+	return &fResult, err
 }

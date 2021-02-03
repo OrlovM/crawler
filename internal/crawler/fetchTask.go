@@ -15,7 +15,7 @@ func NewFetchTask(fetcher *fetcher, page *Page) *FetchTask {
 }
 
 func (f *FetchTask) Process() {
-	f.FetchResult = f.fetcher.Fetch(f.Page.URL)
+	f.FetchResult, f.error = f.fetcher.Fetch(f.Page.URL)
 	f.FetchResult.Depth = f.Page.Depth
 	f.Page.StatusCode = f.FetchResult.StatusCode
 }

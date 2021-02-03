@@ -19,7 +19,7 @@ func ExtractURLs(body []byte) []string {
 	strings := re.FindAllString(string(body), -1)
 	for _, v := range strings {
 		currentURL := v[len("href='"):(len(v) - 1)]
-		URLsFound = append(URLsFound, currentURL, currentURL)
+		URLsFound = append(URLsFound, currentURL)
 	}
 	return URLsFound
 }
