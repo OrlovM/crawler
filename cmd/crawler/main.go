@@ -2,169 +2,116 @@ package main
 
 import (
 	"crawler/internal/crawler"
-	"crawler/internal/fetch"
 	"flag"
 	"fmt"
-	"sync"
 	"time"
+	"workerpool"
 )
 
-var base crawler.PageArray
+var base crawler.PagesSlice
 var Start = time.Now()
 
 type URLSlice []string
 
 func main() {
-	depth := flag.Int("depth", 2, "Depth refers to how far down into a website's page hierarchy crawler crawls")
+	depth := flag.Int("depth", 3, "Depth refers to how far down into a website's page hierarchy crawler crawls")
 	startURL := flag.String("url", "https://ya.ru", "URL to start from")
 	maxGoroutines := flag.Int("n", 50, "A maximum number of goroutines work at the same time")
 	flag.Parse()
-	fetcher := fetch.NewFetcher()
-	unfetchedPages := make(chan crawler.Page)
+	fetcher := crawler.NewFetcher()
+	fIn := make(chan workerpool.Task)
+	fOut := make(chan workerpool.Task)
+	pIn := make(chan workerpool.Task)
+	pOut := make(chan workerpool.Task)
 	addToBase := make(chan crawler.Page)
-	foundPagesChannels := make(chan chan crawler.Page)
-	fetchChannels := make(chan chan fetch.FetchResult)
-	quit := make(chan struct{})
-
-	Start = time.Now()
-
-	//base manager
+	var buffer []workerpool.Task
+	cache := URLSlice{*startURL}
+	tasksInWork := 1
+	exit := false
+	fetchersPool := workerpool.NewPool(fIn, fOut, *maxGoroutines)
+	parsersPool := workerpool.NewPool(pIn, pOut, 1+*maxGoroutines/5)
+	go fetchersPool.Run()
+	go parsersPool.Run()
 	go func() {
 		for p := range addToBase {
 			base = append(base, p)
 		}
 	}()
-
-	//crating manager
 	go func() {
-		foundPages := mergeParsed(foundPagesChannels)
-		foundPages <- crawler.Page{URL: *startURL}
-		var cache URLSlice
-		var buffer crawler.PageArray
-		for {
-			select {
-			case p, ok := <-foundPages:
-				if ok {
-					if !cache.contains(p) {
-						fmt.Println("found new url", p.URL)
-						cache = append(cache, p.URL)
+		fIn <- crawler.NewFetchTask(fetcher, &crawler.Page{URL: *startURL, Depth: 0})
+	}()
+	for {
+		if exit == true {break}
+		select {
+		case t := <- fOut:
+			fmt.Println("got from fOut")
+			tasksInWork--
+			if fT, ok := t.(*crawler.FetchTask); ok == true {
+				fmt.Println("asserted as fTask", fT.Page.URL)
+				addToBase <- *fT.Page
+				if fT.Page.Depth < *depth {
+				pTask := crawler.NewParseTask(fT.FetchResult)
+				select {
+				case pIn <- pTask:
+					fmt.Println("sent to parse")
+					tasksInWork++
+				default:
+					buffer = append(buffer, pTask)
+					}
+				}
+			} //TODO write else branch
+		case t := <- pOut:
+			fmt.Println("got from pOut")
+			tasksInWork--
+			if pT, ok := t.(*crawler.ParseTask); ok == true {
+				fmt.Println("asserted as ParseTask. page")
+				for _, p := range *pT.FoundPages {
+					page := p
+					fmt.Println(p.URL)
+					if !cache.contains(page) {
+						cache = append(cache, page.URL)
+						fTask := crawler.NewFetchTask(fetcher, &page)
 						select {
-						case unfetchedPages <- p:
+						case fIn <- fTask:
+							tasksInWork++
+							fmt.Println("sent to fetch")
 						default:
-							buffer = append(buffer, p)
+							buffer = append(buffer, fTask)
+							fmt.Println("added to buffer")
 						}
-					} else {
-						println("URL", p.URL, "is already in base")
 					}
-				} else {
-					return
 				}
-			case <-quit:
-				close(unfetchedPages)
-				return
-			default:
-				if len(buffer) != 0 {
+			}
+		default:
+			//fmt.Println("default")
+			if len(buffer) != 0 {
+				switch t := buffer[0].(type) {
+				case *crawler.FetchTask:
 					select {
-					case unfetchedPages <- buffer[0]:
-						buffer.TrimFirst()
+					case fIn <- t:
+						tasksInWork++
+						buffer = buffer[1:]
 					default:
-						break
+					}
+				case *crawler.ParseTask:
+					select {
+					case pIn <- t:
+						tasksInWork++
+					default:
 					}
 				}
-			}
-		}
-	}()
-
-	// creating parsers pool
-	go func() {
-		fetchResults := mergeFetched(fetchChannels)
-		for i := 0; i < (1 + *maxGoroutines/5); i++ {
-			foundPages := make(chan crawler.Page)
-			foundPagesChannels <- foundPages
-			go func() {
-				for f := range fetchResults {
-					for _, u := range crawler.ExtractURLs(f.Body) {
-						foundPages <- crawler.Page{URL: u, Depth: f.Depth + 1, From: f.URL}
-					}
-				}
-				close(foundPages)
-			}()
-		}
-		close(foundPagesChannels)
-	}()
-
-	// creating fetchers pool
-	for i := 0; i < *maxGoroutines; i++ {
-		fResults := make(chan fetch.FetchResult)
-		fetchChannels <- fResults
-		go func() {
-			for p := range unfetchedPages {
-				fResult := fetcher.Fetch(p.URL) //TODO add error check
-				p.StatusCode = fResult.StatusCode
-				addToBase <- p
-				fmt.Println("added to base", p.URL)
-				if p.Depth < *depth { //TODO handle redirect
-					fResult.Depth = p.Depth
-					fResults <- fResult
+			} else {
+				if tasksInWork == 0 {
+					exit = true
 				}
 			}
-			close(fResults)
-		}()
+
+		}
 
 	}
-	close(fetchChannels)
-
-	time.Sleep(100000 * time.Millisecond)
 
 	fmt.Println("URL in base", len(base))
 
-}
-
-//Merge fetchers output channels in one
-func mergeFetched(fetchChannels chan chan fetch.FetchResult) <-chan fetch.FetchResult {
-	out := make(chan fetch.FetchResult, 20)
-	var wg sync.WaitGroup
-
-	output := func(c <-chan fetch.FetchResult) {
-		for n := range c {
-			out <- n
-		}
-		wg.Done()
-	}
-
-	for c := range fetchChannels {
-		wg.Add(1)
-		go output(c)
-	}
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-	return out
-}
-
-//Merge fetchers output channels in one
-func mergeParsed(foundPagesChannels chan chan crawler.Page) chan crawler.Page {
-
-	out := make(chan crawler.Page, 20)
-	var wg sync.WaitGroup
-
-	output := func(c <-chan crawler.Page) {
-		for n := range c {
-			out <- n
-		}
-		wg.Done()
-	}
-
-	for c := range foundPagesChannels {
-		wg.Add(1)
-		go output(c)
-	}
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-	return out
 }
 
 func (s URLSlice) contains(p crawler.Page) bool {
@@ -175,3 +122,11 @@ func (s URLSlice) contains(p crawler.Page) bool {
 	}
 	return false
 }
+
+//func printInBase(currentPage Page) {
+//	fmt.Println("URL ", currentPage.URL, "found on Page", currentPage.From, " is already in base")
+//}
+//
+//func printFound(currentPage Page) {
+//	fmt.Println("Found new URL", currentPage.URL, "on Page", currentPage.From, "Depth", currentPage.Depth, "status code", currentPage.StatusCode)
+//}
