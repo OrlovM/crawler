@@ -1,17 +1,15 @@
 package crawler
 
+import "net/url"
+
 type Page struct {
-	URL        string
+	URL        *url.URL
 	Depth      int
-	From       string // URL where this Page was found
+	Source     string // URL where this Page was found
 	StatusCode int    //0 if Page was not requested or request failed
 }
 
 type PagesSlice []Page
-
-func (s *PagesSlice) TrimFirst() {
-	*s = (*s)[1:]
-}
 
 func (s PagesSlice) contains(p *Page) bool {
 	for _, n := range s {
