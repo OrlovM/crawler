@@ -21,6 +21,12 @@ func (p *printer) InBase(pg *crawler.Page) {
 
 func (p *printer) Found(pg *crawler.Page) {
 	if p.Print == true {
-		fmt.Println("Found new URL:", pg.URL, "Source:", pg.Source, "Depth:", pg.Depth, "Status code:", pg.StatusCode)
+		fmt.Println("Found new URL:", pg.URL.String(), "Source:", pg.Source, "Depth:", pg.Depth, "Status code:", pg.StatusCode)
+	}
+}
+
+func (p *printer) Error(err error) {
+	if p.Print == true {
+		fmt.Println(err)
 	}
 }

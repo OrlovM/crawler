@@ -4,13 +4,13 @@ import (
 	"crawler/internal/crawler"
 	"crawler/tools"
 	"crawler/tools/print"
-	"flag"
 	"fmt"
 	"github.com/OrlovM/go-workerpool"
 	"github.com/urfave/cli/v2"
 	"log"
 	"net/url"
 	"os"
+	"sync"
 )
 
 var base crawler.PagesSlice
@@ -24,16 +24,21 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "startURL",
-				Value: "https://clck.ru/9w",
+				Value: "https://ya.ru",
 				Usage: "URL to start from"},
 			&cli.IntFlag{
 				Name:  "depth",
-				Value: 3,
+				Value: 2,
 				Usage: "Depth refers to how far down into a website's page hierarchy crawler crawls"},
 			&cli.IntFlag{
 				Name:  "concurrency",
 				Value: 50,
 				Usage: "A maximum number of goroutines work at the same time"},
+			&cli.BoolFlag{
+				Name:    "verbose",
+				Value:   false,
+				Usage:   "Prints details about crawling process",
+				Aliases: []string{"v"}},
 		},
 	}
 	err := app.Run(os.Args)
@@ -41,16 +46,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("URL in base", len(base))
+	fmt.Println("URL in base:", len(base))
 }
 
 func crawl(ctx *cli.Context) error {
 	depth := ctx.Int("depth")
 	startURL := ctx.String("startURL")
 	concurrency := ctx.Int("concurrency")
-	printer := print.NewPrinter(true)
+	printer := print.NewPrinter(ctx.Bool("verbose"))
 	var errors []error
-	flag.Parse()
 	fetcher := crawler.NewFetcher()
 	addToBase := make(chan crawler.Page)
 	var buffer tools.TasksSlice
@@ -65,11 +69,14 @@ func crawl(ctx *cli.Context) error {
 	in := make(chan workerpool.Task)
 	out := make(chan workerpool.Task)
 	pool := workerpool.NewPool(in, out, concurrency)
+	var wg sync.WaitGroup
 	go pool.Run()
+	wg.Add(1)
 	go func() {
 		for p := range addToBase {
 			base = append(base, p)
 		}
+		wg.Done()
 	}()
 	go func() {
 		in <- crawler.NewCrawlerTask(fetcher, &crawler.Page{URL: start, Source: "Set in command line"}, true)
@@ -84,7 +91,7 @@ func crawl(ctx *cli.Context) error {
 			tasksInWork--
 			if cT, ok := t.(*crawler.Task); ok == true {
 				if cT.Error != nil {
-					fmt.Println(cT.Error)
+					printer.Error(cT.Error)
 					errors = append(errors, cT.Error)
 					break
 				}
@@ -116,10 +123,12 @@ func crawl(ctx *cli.Context) error {
 				}
 			} else {
 				if tasksInWork == 0 {
+					close(addToBase)
 					exit = true
 				}
 			}
 		}
 	}
+	wg.Wait()
 	return nil
 }
