@@ -3,36 +3,68 @@ package main
 import (
 	"crawler/internal/crawler"
 	"crawler/tools"
-	print "crawler/tools/print"
+	"crawler/tools/print"
 	"flag"
 	"fmt"
 	"github.com/OrlovM/go-workerpool"
+	"github.com/urfave/cli/v2"
+	"log"
 	"net/url"
+	"os"
 )
 
 var base crawler.PagesSlice
 
 func main() {
-	depth := flag.Int("depth", 2, "Depth refers to how far down into a website's page hierarchy crawler crawls")
-	startURL := flag.String("url", "https://clck.ru/9w", "URL to start from")
-	maxGoroutines := flag.Int("n", 50, "A maximum number of goroutines work at the same time")
+
+	app := cli.App{
+		Name:   "Crawler",
+		Usage:  "Recursively crawl urls from defined url until the desired depth of recursion will be achieved.",
+		Action: crawl,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "startURL",
+				Value: "https://clck.ru/9w",
+				Usage: "URL to start from"},
+			&cli.IntFlag{
+				Name:  "depth",
+				Value: 3,
+				Usage: "Depth refers to how far down into a website's page hierarchy crawler crawls"},
+			&cli.IntFlag{
+				Name:  "concurrency",
+				Value: 50,
+				Usage: "A maximum number of goroutines work at the same time"},
+		},
+	}
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("URL in base", len(base))
+}
+
+func crawl(ctx *cli.Context) error {
+	depth := ctx.Int("depth")
+	startURL := ctx.String("startURL")
+	concurrency := ctx.Int("concurrency")
 	printer := print.NewPrinter(true)
 	var errors []error
 	flag.Parse()
 	fetcher := crawler.NewFetcher()
 	addToBase := make(chan crawler.Page)
 	var buffer tools.TasksSlice
-	start, err := url.Parse(*startURL)
+	start, err := url.Parse(startURL)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	cache := tools.URLSlice{start}
 	tasksInWork := 1
 	exit := false
 	in := make(chan workerpool.Task)
 	out := make(chan workerpool.Task)
-	pool := workerpool.NewPool(in, out, *maxGoroutines)
+	pool := workerpool.NewPool(in, out, concurrency)
 	go pool.Run()
 	go func() {
 		for p := range addToBase {
@@ -62,7 +94,7 @@ func main() {
 					page := p
 					if !cache.Contains(&page) {
 						cache = append(cache, page.URL)
-						task := crawler.NewCrawlerTask(fetcher, &page, page.Depth < *depth)
+						task := crawler.NewCrawlerTask(fetcher, &page, page.Depth < depth)
 						select {
 						case in <- task:
 							tasksInWork++
@@ -89,6 +121,5 @@ func main() {
 			}
 		}
 	}
-
-	fmt.Println("URL in base", len(base))
+	return nil
 }
