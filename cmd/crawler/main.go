@@ -3,6 +3,7 @@ package main
 import (
 	"crawler/internal/crawler"
 	"crawler/tools"
+	print "crawler/tools/print"
 	"flag"
 	"fmt"
 	"github.com/OrlovM/go-workerpool"
@@ -11,11 +12,11 @@ import (
 
 var base crawler.PagesSlice
 
-
 func main() {
 	depth := flag.Int("depth", 2, "Depth refers to how far down into a website's page hierarchy crawler crawls")
 	startURL := flag.String("url", "https://clck.ru/9w", "URL to start from")
 	maxGoroutines := flag.Int("n", 50, "A maximum number of goroutines work at the same time")
+	printer := print.NewPrinter(true)
 	var errors []error
 	flag.Parse()
 	fetcher := crawler.NewFetcher()
@@ -56,7 +57,7 @@ func main() {
 					break
 				}
 				addToBase <- *cT.Page
-				printFound(cT.Page)
+				printer.Found(cT.Page)
 				for _, p := range cT.FoundPages {
 					page := p
 					if !cache.Contains(&page) {
@@ -69,7 +70,7 @@ func main() {
 							buffer = append(buffer, task)
 						}
 					} else {
-						printInBase(&page)
+						printer.InBase(&page)
 					}
 				}
 			} //TODO write else branch
@@ -89,16 +90,5 @@ func main() {
 		}
 	}
 
-
 	fmt.Println("URL in base", len(base))
 }
-
-func printInBase(currentPage *crawler.Page) {
-	fmt.Println("URL:", currentPage.URL, "Source:", currentPage.Source, " is already in base")
-}
-
-func printFound(currentPage *crawler.Page) {
-	fmt.Println("Found new URL:", currentPage.URL, "Source:", currentPage.Source, "Depth:", currentPage.Depth, "Status code:", currentPage.StatusCode)
-}
-
-
