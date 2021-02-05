@@ -13,14 +13,14 @@ func NewPrinter(print bool) *printer {
 	return &printer{Print: print}
 }
 
-func (p *printer) InBase(currentPage *crawler.Page) {
+func (p *printer) InBase(pg *crawler.Page) {
 	if p.Print == true {
-		fmt.Println("URL:", currentPage.URL, "Source:", currentPage.Source, " is already in base")
+		fmt.Println("URL:", pg.URL, "Source:", pg.Source, " is already in base")
 	}
 }
 
-func (p *printer) Found(currentPage *crawler.Page) {
+func (p *printer) Found(pg *crawler.Page) {
 	if p.Print == true {
-		fmt.Println("Found new URL:", currentPage.URL, "Source:", currentPage.Source, "Depth:", currentPage.Depth, "Status code:", currentPage.StatusCode)
+		fmt.Println("Found new URL:", pg.URL, "Source:", pg.Source, "Depth:", pg.Depth, "Status code:", pg.StatusCode)
 	}
 }
