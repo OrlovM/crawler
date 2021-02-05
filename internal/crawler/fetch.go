@@ -37,7 +37,7 @@ func (p *Page) Status() int {
 	return NoData
 }
 
-func (fetcher *fetcher) Fetch(task *CrawlerTask) {
+func (fetcher *fetcher) Fetch(task *Task) {
 	resp, err := fetcher.client.Get(task.Page.URL.String())
 	if err != nil {
 		task.Error = err
