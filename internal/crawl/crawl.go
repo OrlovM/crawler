@@ -1,7 +1,6 @@
 package crawl
 
 import (
-	"fmt"
 	"github.com/OrlovM/go-workerpool"
 	"net/url"
 	"sync"
@@ -9,10 +8,12 @@ import (
 
 func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*PagesSlice, error) {
 	var (
-		errors []error
-		base   PagesSlice
-		buffer TasksSlice
-		wg     sync.WaitGroup
+		errors      []error
+		base        PagesSlice
+		wg          sync.WaitGroup
+		cache       URLSlice
+		tasksInWork int
+		exit        bool
 	)
 	printer := NewPrinter(*verbose)
 	fetcher := NewFetcher()
@@ -21,12 +22,9 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 	out := make(chan workerpool.Task)
 	start, err := url.Parse(*startURL)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
-	cache := URLSlice{start}
-	tasksInWork := 1
-	exit := false
+	buffer := TasksSlice{NewCrawlerTask(fetcher, &Page{URL: start, Source: "Set in command line"}, true)}
 	pool := workerpool.NewPool(in, out, *concurrency)
 	go pool.Run()
 	wg.Add(1)
@@ -35,9 +33,6 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 			base = append(base, p)
 		}
 		wg.Done()
-	}()
-	go func() {
-		in <- NewCrawlerTask(fetcher, &Page{URL: start, Source: "Set in command line"}, true)
 	}()
 
 	for {

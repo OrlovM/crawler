@@ -27,7 +27,7 @@ func main() {
 				Usage: "URL to start from"},
 			&cli.IntFlag{
 				Name:  "depth",
-				Value: 2,
+				Value: 3,
 				Usage: "Depth refers to how far down into a website's page hierarchy crawler crawls"},
 			&cli.IntFlag{
 				Name:  "concurrency",
