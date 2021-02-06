@@ -1,7 +1,6 @@
-package tools
+package crawl
 
 import (
-	"crawler/internal/crawler"
 	"github.com/OrlovM/go-workerpool"
 	"net/url"
 )
@@ -9,7 +8,7 @@ import (
 type URLSlice []*url.URL
 type TasksSlice []workerpool.Task
 
-func (s URLSlice) Contains(p *crawler.Page) bool {
+func (s URLSlice) Contains(p *Page) bool {
 	for _, u := range s {
 		if *p.URL == *u {
 			return true
