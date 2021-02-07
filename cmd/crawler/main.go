@@ -6,7 +6,6 @@ import (
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
-	"sort"
 )
 
 func main() {
@@ -27,7 +26,7 @@ func main() {
 				Usage: "URL to start from"},
 			&cli.IntFlag{
 				Name:  "depth",
-				Value: 3,
+				Value: 2,
 				Usage: "Depth refers to how far down into a website's page hierarchy crawler crawls"},
 			&cli.IntFlag{
 				Name:  "concurrency",
@@ -55,7 +54,6 @@ func startCrawl(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	sort.Sort(base)
 	fmt.Println("URL in base:", len(*base))
 	return nil
 }

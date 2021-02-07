@@ -11,6 +11,7 @@ type Page struct {
 
 type PagesSlice []Page
 
+//Implementation of sort interface
 func (s PagesSlice) Len() int { return len(s) }
 
 func (s PagesSlice) Less(i, j int) bool { return s[i].Depth < s[j].Depth }

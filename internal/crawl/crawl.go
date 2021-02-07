@@ -3,37 +3,33 @@ package crawl
 import (
 	"github.com/OrlovM/go-workerpool"
 	"net/url"
-	"sync"
 )
 
 func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*PagesSlice, error) {
 	var (
 		errors      []error
-		base        PagesSlice
-		wg          sync.WaitGroup
 		cache       URLSlice
 		tasksInWork int
 		exit        bool
+
+		addToBase = make(chan Page)
+		in        = make(chan workerpool.Task)
+		out       = make(chan workerpool.Task)
+
+		bw      = baseWriter{}
+		printer = NewPrinter(*verbose)
+		fetcher = NewFetcher()
+		pool    = workerpool.NewPool(in, out, *concurrency)
 	)
-	printer := NewPrinter(*verbose)
-	fetcher := NewFetcher()
-	addToBase := make(chan Page)
-	in := make(chan workerpool.Task)
-	out := make(chan workerpool.Task)
+
 	start, err := url.Parse(*startURL)
 	if err != nil {
 		return nil, err
 	}
 	buffer := TasksSlice{NewCrawlerTask(fetcher, &Page{URL: start, Source: "Set in command line"}, true)}
-	pool := workerpool.NewPool(in, out, *concurrency)
+
 	go pool.Run()
-	wg.Add(1)
-	go func() {
-		for p := range addToBase {
-			base = append(base, p)
-		}
-		wg.Done()
-	}()
+	bw.start(addToBase)
 
 	for {
 		if exit == true {
@@ -83,6 +79,5 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 			}
 		}
 	}
-	wg.Wait()
-	return &base, nil
+	return bw.getBase(), nil
 }
