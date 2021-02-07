@@ -1,6 +1,6 @@
 # Crawler
 
-A simple web crawler written on Go. It recursively crawls urls from defined url untill the desired depth of recursion will be achieved.
+A simple web crawler written on Go. It recursively crawls urls from defined url until the desired depth of recursion will be achieved.
 
 ## How to use
 
