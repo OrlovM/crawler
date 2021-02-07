@@ -34,7 +34,7 @@ func main() {
 				Usage: "A maximum number of goroutines work at the same time"},
 			&cli.BoolFlag{
 				Name:    "verbose",
-				Value:   true,
+				Value:   false,
 				Usage:   "Prints details about crawling process",
 				Aliases: []string{"v"}},
 		},

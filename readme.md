@@ -11,14 +11,19 @@ Run it with or without command line flags.
 Example:
 
 ```
-./crawler -depth 5 -n 20 -url https://google.com
+./crawler --startURL https://google.com --depth 3 --concurrency 20 -v
 ```
 
 Command line flags:
 
--depth Depth refers to how far down into a website's page hierarchy crawler crawls (default 5)
+--StartURL URL to start from URL to start from (default: "https://ya.ru")
 
--n A maximum number of goroutines work at the same time (default 20)
+--depth Depth refers to how far down into a website's page hierarchy crawler crawls (default 2)
 
--url URL to start from (default "https://clck.ru/9w")
+--concurrency A maximum number of goroutines work at the same time (default: 50)
+
+--verbose, -v Prints details about crawling process (default: false)
+
+
+
 
