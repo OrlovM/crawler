@@ -18,11 +18,3 @@ func (s PagesSlice) Less(i, j int) bool { return s[i].Depth < s[j].Depth }
 
 func (s PagesSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
-func (s PagesSlice) contains(p *Page) bool {
-	for _, n := range s {
-		if p.URL == n.URL {
-			return true
-		}
-	}
-	return false
-}
