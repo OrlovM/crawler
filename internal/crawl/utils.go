@@ -5,10 +5,11 @@ import (
 	"net/url"
 )
 
-type URLSlice []*url.URL
-type TasksSlice []workerpool.Task
+type urlSlice []*url.URL
+type tasksSlice []workerpool.Task
 
-func (s URLSlice) Contains(p *Page) bool {
+//Checks if urlSlice contains Page.URL
+func (s urlSlice) Contains(p *Page) bool {
 	for _, u := range s {
 		if *p.URL == *u {
 			return true
@@ -17,6 +18,7 @@ func (s URLSlice) Contains(p *Page) bool {
 	return false
 }
 
-func (s *TasksSlice) TrimFirst() {
+//Trims the first task in tasksSlice
+func (s *tasksSlice) TrimFirst() {
 	*s = (*s)[1:]
 }

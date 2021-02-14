@@ -5,10 +5,11 @@ import (
 	"net/url"
 )
 
+//Crawl recursively crawls URLs from startURL and returns slice of found Pages
 func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*PagesSlice, error) {
 	var (
 		errors      []error
-		cache       URLSlice
+		cache       urlSlice
 		tasksInWork int
 		exit        bool
 
@@ -17,8 +18,8 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 		out       = make(chan workerpool.Task)
 
 		bw      = baseWriter{}
-		printer = NewPrinter(*verbose)
-		fetcher = NewFetcher()
+		printer = newPrinter(*verbose)
+		fetcher = newFetcher()
 		pool    = workerpool.NewPool(in, out, *concurrency)
 	)
 
@@ -26,7 +27,7 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 	if err != nil {
 		return nil, err
 	}
-	buffer := TasksSlice{NewCrawlerTask(fetcher, &Page{URL: start, Source: "Set in command line"}, true)}
+	buffer := tasksSlice{newCrawlerTask(fetcher, &Page{URL: start, Source: "Set in command line"}, true)}
 
 	go pool.Run()
 	bw.start(addToBase)
@@ -38,7 +39,7 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 		select {
 		case t := <-out:
 			tasksInWork--
-			if cT, ok := t.(*Task); ok == true {
+			if cT, ok := t.(*task); ok == true {
 				if cT.Error != nil {
 					printer.Error(cT.Error)
 					errors = append(errors, cT.Error)
@@ -50,7 +51,7 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 					if !cache.Contains(&page) {
 						printer.Found(&page)
 						cache = append(cache, page.URL)
-						task := NewCrawlerTask(fetcher, &page, page.Depth < *depth)
+						task := newCrawlerTask(fetcher, &page, page.Depth < *depth)
 						select {
 						case in <- task:
 							tasksInWork++

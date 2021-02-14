@@ -8,7 +8,7 @@ type printer struct {
 	Print bool
 }
 
-func NewPrinter(print bool) *printer {
+func newPrinter(print bool) *printer {
 	return &printer{Print: print}
 }
 

@@ -1,6 +1,6 @@
 package crawl
 
-type Task struct {
+type task struct {
 	Error      error
 	Page       *Page
 	fetcher    *fetcher
@@ -8,14 +8,15 @@ type Task struct {
 	FoundPages PagesSlice
 }
 
-func NewCrawlerTask(fetcher *fetcher, page *Page, ParseURLs bool) *Task {
-	return &Task{
+//newCrawlerTask creates and returns task
+func newCrawlerTask(fetcher *fetcher, page *Page, ParseURLs bool) *task {
+	return &task{
 		fetcher:   fetcher,
 		Page:      page,
 		ParseURLs: ParseURLs,
 	}
 }
 
-func (t *Task) Process() {
+func (t *task) Process() {
 	t.fetcher.Fetch(t)
 }
