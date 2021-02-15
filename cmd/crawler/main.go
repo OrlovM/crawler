@@ -50,10 +50,11 @@ func startCrawl(ctx *cli.Context) error {
 	startURL := ctx.String("startURL")
 	concurrency := ctx.Int("concurrency")
 	verbose := ctx.Bool("verbose")
-	base, err := crawl.Crawl(&startURL, &depth, &concurrency, &verbose)
+	base, errors, err := crawl.Crawl(&startURL, &depth, &concurrency, &verbose)
 	if err != nil {
 		return err
 	}
 	fmt.Println("URL in base:", len(*base))
+	fmt.Println("Errors occurred", len(*errors))
 	return nil
 }

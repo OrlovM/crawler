@@ -5,10 +5,11 @@ import (
 	"net/url"
 )
 
-//Crawl recursively crawls URLs from startURL and returns slice of found Pages
-func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*PagesSlice, error) {
+//Crawl recursively crawls URLs from startURL and returns slice of found Pages and errors
+func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*PagesSlice, *[]error, error) {
 	var (
-		//errors      []error
+		//Errors occurred during parsing and fetching URLs
+		errors      []error
 		cache       urlSlice
 		tasksInWork int
 		exit        bool
@@ -25,7 +26,7 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 
 	start, err := url.Parse(*startURL)
 	if err != nil {
-		return nil, err
+		return nil, &errors, err
 	}
 	buffer := tasksSlice{newCrawlerTask(fetcher, &Page{URL: start, Source: "Set in command line"}, true)}
 
@@ -42,7 +43,7 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 			if cT, ok := t.(*task); ok {
 				if cT.Error != nil {
 					printer.Error(cT.Error)
-					//errors = append(errors, cT.Error)
+					errors = append(errors, cT.Error)
 					break
 				}
 				addToBase <- *cT.Page
@@ -80,5 +81,5 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 			}
 		}
 	}
-	return bw.getBase(), nil
+	return bw.getBase(), &errors, nil
 }
