@@ -13,19 +13,19 @@ func newPrinter(print bool) *printer {
 }
 
 func (p *printer) InBase(pg *Page) {
-	if p.Print == true {
+	if p.Print {
 		fmt.Println("URL:", pg.URL, "Source:", pg.Source, " is already in base")
 	}
 }
 
 func (p *printer) Found(pg *Page) {
-	if p.Print == true {
+	if p.Print {
 		fmt.Println("Found new URL:", pg.URL.String(), "Source:", pg.Source, "Depth:", pg.Depth, "Status code:", pg.StatusCode)
 	}
 }
 
 func (p *printer) Error(err error) {
-	if p.Print == true {
+	if p.Print {
 		fmt.Println(err)
 	}
 }

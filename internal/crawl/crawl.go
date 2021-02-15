@@ -8,7 +8,7 @@ import (
 //Crawl recursively crawls URLs from startURL and returns slice of found Pages
 func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*PagesSlice, error) {
 	var (
-		errors      []error
+		//errors      []error
 		cache       urlSlice
 		tasksInWork int
 		exit        bool
@@ -33,16 +33,16 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 	bw.start(addToBase)
 
 	for {
-		if exit == true {
+		if exit {
 			break
 		}
 		select {
 		case t := <-out:
 			tasksInWork--
-			if cT, ok := t.(*task); ok == true {
+			if cT, ok := t.(*task); ok {
 				if cT.Error != nil {
 					printer.Error(cT.Error)
-					errors = append(errors, cT.Error)
+					//errors = append(errors, cT.Error)
 					break
 				}
 				addToBase <- *cT.Page
