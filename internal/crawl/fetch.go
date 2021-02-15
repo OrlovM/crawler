@@ -50,7 +50,7 @@ func (fetcher *fetcher) Fetch(task *task) {
 	}
 	defer resp.Body.Close()
 	task.Page.StatusCode = resp.StatusCode
-	if task.ParseURLs {
+	if !task.ParseURLs {
 		return
 	}
 	switch task.Page.Status() {
