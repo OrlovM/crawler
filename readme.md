@@ -2,6 +2,21 @@
 
 A simple web crawler written on Go. It recursively crawls urls from defined url until the desired depth of recursion will be achieved.
 
+## Install
+
+Download the latest release binary file from: https://github.com/OrlovM/crawler/releases/
+
+###Or 
+Get the source file with: 
+```
+go get github.com/OrlovM/crawler
+```
+And build with:
+```
+make build
+```
+
+
 ## How to use
 
 Download and build project.
