@@ -7,6 +7,7 @@ A simple web crawler written on Go. It recursively crawls urls from defined url 
 Download the latest release binary file from: https://github.com/OrlovM/crawler/releases/
 
 ###Or 
+
 Get the source file with: 
 ```
 go get github.com/OrlovM/crawler
@@ -18,8 +19,6 @@ make build
 
 
 ## How to use
-
-Download and build project.
 
 Run it with or without command line flags.
 
