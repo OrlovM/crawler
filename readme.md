@@ -6,7 +6,7 @@ A simple web crawler written on Go. It recursively crawls urls from defined url 
 
 Download the latest release binary file from: https://github.com/OrlovM/crawler/releases/
 
-###Or 
+### Or 
 
 Get the source file with: 
 ```
