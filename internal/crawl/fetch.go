@@ -1,11 +1,12 @@
 package crawl
 
 import (
-	"golang.org/x/net/html"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
+
+	"golang.org/x/net/html"
 )
 
 const (
@@ -78,7 +79,7 @@ func (fetcher *fetcher) Fetch(task *task) {
 }
 
 func getLinks(body io.Reader) []string {
-	var links []string
+	links := []string{}
 	z := html.NewTokenizer(body)
 	for {
 		tt := z.Next()
@@ -87,7 +88,7 @@ func getLinks(body io.Reader) []string {
 			return links
 		case html.StartTagToken, html.EndTagToken:
 			token := z.Token()
-			if "a" == token.Data {
+			if token.Data == "a" {
 				for _, attr := range token.Attr {
 					if attr.Key == "href" {
 						links = append(links, attr.Val)

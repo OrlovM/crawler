@@ -1,8 +1,9 @@
 package crawl
 
 import (
-	"github.com/OrlovM/go-workerpool"
 	"net/url"
+
+	"github.com/OrlovM/go-workerpool"
 )
 
 //Crawl recursively crawls URLs from startURL and returns slice of found Pages and errors
