@@ -27,8 +27,9 @@ func TestGetLinks(t *testing.T) {
 		body string
 		want []string
 	}{
-		{body: "This is just a test string", want: []string{}},
-		{body: `<a href="http://www.yandex.ru">ya.ru</a>`, want: []string{"http://www.yandex.ru"}},
+		{body: "This is just a test string", want: nil},
+		{body: `<a href="http://www.yandex.ru">ya.ru</a>`,
+			want: []string{"http://www.yandex.ru"}},
 		{body: htmlFragment, want: []string{"http://test.com", "http://test2.com/test"}},
 	}
 

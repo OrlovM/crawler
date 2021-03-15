@@ -72,14 +72,15 @@ func (fetcher *fetcher) Fetch(task *task) {
 			task.Error = err
 			return
 		}
-		p := Page{redirectDestination, task.Page.Depth, "Redirected from " + task.Page.URL.String(), 0}
+		p := Page{redirectDestination, task.Page.Depth,
+			"Redirected from " + task.Page.URL.String(), 0}
 		task.FoundPages = append(task.FoundPages, p)
 	}
 
 }
 
 func getLinks(body io.Reader) []string {
-	links := []string{}
+	var links []string
 	z := html.NewTokenizer(body)
 	for {
 		tt := z.Next()
