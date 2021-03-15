@@ -5,7 +5,7 @@ lint:
 	golangci-lint run
 
 test:
-	go test ./...
+	go test ./... -v
 
 build:
 	go build -o bin/crawler ./cmd/crawler/main.go
