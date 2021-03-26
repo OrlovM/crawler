@@ -25,8 +25,7 @@ func (s PagesSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 //MarshalJSON is Marshaler interface method
 func (p *Page) MarshalJSON() ([]byte, error) {
-	type Alias Page
-	type JsonURL struct {
+	type JSONURL struct {
 		Scheme      string        `json:"scheme,omitempty"`
 		Opaque      string        `json:"opaque,omitempty"`
 		User        *url.Userinfo `json:"user,omitempty"`
@@ -38,7 +37,7 @@ func (p *Page) MarshalJSON() ([]byte, error) {
 		Fragment    string        `json:"fragment,omitempty"`
 		RawFragment string        `json:"raw_fragment,omitempty"`
 	}
-	u := JsonURL{
+	u := JSONURL{
 		Scheme:      p.URL.Scheme,
 		Opaque:      p.URL.Opaque,
 		User:        p.URL.User,
@@ -52,7 +51,7 @@ func (p *Page) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(struct {
-		URL        JsonURL `json:"url"`
+		URL        JSONURL `json:"url"`
 		Depth      int     `json:"depth"`
 		Source     string  `json:"source"`
 		StatusCode int     `json:"status_code"`

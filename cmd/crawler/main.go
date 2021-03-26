@@ -69,6 +69,7 @@ func Run(ctx *cli.Context) error {
 	if err != nil {
 		log.Fatal("Unable to create file:", err)
 	}
+
 	depth := ctx.Int("depth")
 	startURL := ctx.String("startURL")
 	concurrency := ctx.Int("concurrency")
@@ -79,10 +80,13 @@ func Run(ctx *cli.Context) error {
 	}
 	r := Result{string(startURL), len(*base), len(*errors), *base, *errors}
 	j, _ := json.MarshalIndent(r, "", "\t")
-	results.Write(j)
+	_, err = results.Write(j)
+	if err != nil {
+		log.Fatal(err)
+	}
 	err = results.Close()
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 	fmt.Println("URL in base:", len(*base))
 	fmt.Println("Errors occurred", len(*errors))
