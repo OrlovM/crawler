@@ -2,23 +2,35 @@ package main
 
 import (
 	"crawler/internal/crawl"
+	"encoding/json"
 	"fmt"
-	"github.com/urfave/cli/v2"
 	"log"
 	"os"
+	"time"
+
+	"github.com/urfave/cli/v2"
 )
+
+type Result struct {
+	StartURL        string           `json:"start_url"`
+	UniqueURLsFound int              `json:"unique_ur_ls_found"`
+	ErrorsOccured   int              `json:"errors_occured"`
+	URLs            crawl.PagesSlice `json:"urls"`
+	Errors          []error          `json:"errors"`
+}
 
 func main() {
 	app := cli.App{
 		Name:   "Crawler",
 		Usage:  "Recursively crawl urls from defined url until the desired depth of recursion will be achieved.",
-		Action: startCrawl,
+		Action: Run,
 		Authors: []*cli.Author{
 			{
 				Name:  "Orlov Mikhail",
 				Email: "orlov@email.com",
 			},
 		},
+		Compiled: time.Now(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "startURL",
@@ -37,6 +49,13 @@ func main() {
 				Value:   false,
 				Usage:   "Prints details about crawling process",
 				Aliases: []string{"v"}},
+			&cli.StringFlag{
+				Name:  "filepath",
+				Value: "crawl_results/",
+				Usage: `A path there the file with results of crawl will be created.
+				Could be specified with file name e.g. "/a/b.txt" or only a directory "/a/".
+				If file name is not specified it will be set to default pattern "startURL_date"`,
+				Aliases: []string{"p"}},
 		},
 	}
 	err := app.Run(os.Args)
@@ -45,7 +64,11 @@ func main() {
 	}
 }
 
-func startCrawl(ctx *cli.Context) error {
+func Run(ctx *cli.Context) error {
+	results, err := crawl.CreateFile(ctx)
+	if err != nil {
+		log.Fatal("Unable to create file:", err)
+	}
 	depth := ctx.Int("depth")
 	startURL := ctx.String("startURL")
 	concurrency := ctx.Int("concurrency")
@@ -54,7 +77,15 @@ func startCrawl(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	r := Result{string(startURL), len(*base), len(*errors), *base, *errors}
+	j, _ := json.MarshalIndent(r, "", "\t")
+	results.Write(j)
+	err = results.Close()
+	if err != nil {
+		fmt.Println(err)
+	}
 	fmt.Println("URL in base:", len(*base))
 	fmt.Println("Errors occurred", len(*errors))
+
 	return nil
 }
