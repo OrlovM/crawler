@@ -2,7 +2,6 @@ package crawl
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 
@@ -46,7 +45,7 @@ func (p *Page) Status() int {
 func (fetcher *fetcher) Fetch(task *task) {
 	resp, err := fetcher.client.Get(task.Page.URL.String())
 	if err != nil {
-		task.Error = err
+		task.Errors = append(task.Errors, err)
 		return
 	}
 	defer resp.Body.Close()
@@ -60,7 +59,7 @@ func (fetcher *fetcher) Fetch(task *task) {
 		for _, l := range getLinks(resp.Body) {
 			u, err := url.Parse(l)
 			if err != nil {
-				log.Fatal(err)
+				task.Errors = append(task.Errors, err)
 			}
 			absURL := task.Page.URL.ResolveReference(u)
 			p := Page{absURL, depth, task.Page.URL.String(), 0}
@@ -69,7 +68,7 @@ func (fetcher *fetcher) Fetch(task *task) {
 	case Redirect:
 		redirectDestination, err := url.Parse(resp.Header.Get("Location"))
 		if err != nil {
-			task.Error = err
+			task.Errors = append(task.Errors, err)
 			return
 		}
 		p := Page{redirectDestination, task.Page.Depth,

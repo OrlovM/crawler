@@ -1,7 +1,7 @@
 package crawl
 
 type task struct {
-	Error      error
+	Errors     []error
 	Page       *Page
 	fetcher    *fetcher
 	ParseURLs  bool

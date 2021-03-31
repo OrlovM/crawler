@@ -2,6 +2,7 @@ package main
 
 import (
 	"crawler/internal/crawl"
+	"crawler/internal/tools"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -65,7 +66,7 @@ func main() {
 }
 
 func Run(ctx *cli.Context) error {
-	results, err := crawl.CreateFile(ctx)
+	results, err := tools.CreateFile(ctx)
 	if err != nil {
 		log.Fatal("Unable to create file:", err)
 	}
@@ -74,20 +75,28 @@ func Run(ctx *cli.Context) error {
 	startURL := ctx.String("startURL")
 	concurrency := ctx.Int("concurrency")
 	verbose := ctx.Bool("verbose")
+
 	base, errors, err := crawl.Crawl(&startURL, &depth, &concurrency, &verbose)
 	if err != nil {
 		return err
 	}
+
 	r := Result{string(startURL), len(*base), len(*errors), *base, *errors}
-	j, _ := json.MarshalIndent(r, "", "\t")
+	j, err := json.MarshalIndent(r, "", "\t")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	_, err = results.Write(j)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	err = results.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	fmt.Println("URL in base:", len(*base))
 	fmt.Println("Errors occurred", len(*errors))
 

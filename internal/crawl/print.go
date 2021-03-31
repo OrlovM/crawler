@@ -24,8 +24,10 @@ func (p *printer) Found(pg *Page) {
 	}
 }
 
-func (p *printer) Error(err error) {
+func (p *printer) Error(errs []error) {
 	if p.Print {
-		fmt.Println(err)
+		for err := range errs {
+			fmt.Println(err)
+		}
 	}
 }

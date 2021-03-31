@@ -42,9 +42,9 @@ func Crawl(startURL *string, depth *int, concurrency *int, verbose *bool) (*Page
 		case t := <-out:
 			tasksInWork--
 			if cT, ok := t.(*task); ok {
-				if cT.Error != nil {
-					printer.Error(cT.Error)
-					errors = append(errors, cT.Error)
+				if cT.Errors != nil {
+					printer.Error(cT.Errors)
+					errors = append(errors, cT.Errors...)
 					break
 				}
 				addToBase <- *cT.Page
