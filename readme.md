@@ -25,7 +25,7 @@ Run it with or without command line flags.
 Example:
 
 ```
-./crawler --startURL https://google.com --depth 3 --concurrency 20 -v -p ./results/result.yml
+./crawler --startURL https://google.com --depth 3 --concurrency 20 -v -p ./results/result.json
 ```
 
 Command line flags:
