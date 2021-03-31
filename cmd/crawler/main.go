@@ -55,7 +55,7 @@ func main() {
 				Value: "crawl_results/",
 				Usage: `A path there the file with results of crawl will be created.
 				Could be specified with file name e.g. "/a/b.txt" or only a directory "/a/".
-				If file name is not specified it will be set to default pattern "2006-01-02T15:04:05.yml"`,
+				If file name is not specified it will be set to default pattern "2006-01-02T15:04:05.json"`,
 				Aliases: []string{"p"}},
 		},
 	}
