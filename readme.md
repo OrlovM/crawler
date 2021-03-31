@@ -25,7 +25,7 @@ Run it with or without command line flags.
 Example:
 
 ```
-./crawler --startURL https://google.com --depth 3 --concurrency 20 -v
+./crawler --startURL https://google.com --depth 3 --concurrency 20 -v -p ./results/result.yml
 ```
 
 Command line flags:
@@ -37,6 +37,10 @@ Command line flags:
 --concurrency A maximum number of goroutines work at the same time (default: 50)
 
 --verbose, -v Prints details about crawling process (default: false)
+
+--filepath, -p A path there the file with results of crawl will be created.
+Could be specified with file name e.g. "/a/b.yml" or only a directory "/a/".
+If file name is not specified it will be set to default pattern "2006-01-02T15:04:05.yml"`, (default: ./crawl_results/)
 
 
 

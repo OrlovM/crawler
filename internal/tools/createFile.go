@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -13,7 +14,7 @@ func CreateFile(ctx *cli.Context) (*os.File, error) {
 		return nil, err
 	}
 	if file == "" {
-		file = ctx.App.Compiled.Format("2006-01-02T15:04:05")
+		file = fmt.Sprintf("%v%v", ctx.App.Compiled.Format("2006-01-02T15:04:05"), ".yml")
 	}
 	fp := filepath.Join(dir, file)
 	return os.Create(fp)
