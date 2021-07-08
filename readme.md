@@ -36,9 +36,9 @@ Command line flags:
 
 `--concurrency` A maximum number of goroutines work at the same time (default: 50)
 
-`--verbose`, -v Prints details about crawling process (default: false)
+`--verbose`, `-v` Prints details about crawling process (default: false)
 
-`--filepath`, -p A path there the file with results of crawl will be created.
+`--filepath`, `-p` A path there the file with results of crawl will be created.
 Could be specified with file name e.g. "/a/b.json" or only a directory "/a/".
 If file name is not specified it will be set to default pattern "2006-01-02T15:04:05.json"`, (default: ./crawl_results/)
 
