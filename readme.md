@@ -16,7 +16,7 @@ Download the latest release binary file from: https://github.com/OrlovM/crawler/
 
 ### Or 
 
-Get the source file with: 
+Get the source files with: 
 ```
 go get github.com/OrlovM/crawler
 ```
