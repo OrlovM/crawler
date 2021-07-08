@@ -30,7 +30,7 @@ Example:
 
 Command line flags:
 
---StartURL URL to start from URL to start from (default: "https://ya.ru")
+--StartURL URL to start from (default: "https://ya.ru")
 
 --depth Depth refers to how far down into a website's page hierarchy crawler crawls (default 2)
 
